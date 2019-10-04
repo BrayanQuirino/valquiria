@@ -1,0 +1,11 @@
+{
+  "name": "disney",
+  "version": "1.0.0",
+  "description": "Prueba de una alexa mas formal",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brayan Quirini",
+  "license": "ISC"
+}
