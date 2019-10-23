@@ -8,7 +8,7 @@ const pool = new Pool({
   password: 'postgres',
   port: 5432,
 })
-pool.query('SELECT * FROM answers;', (err, res) => {
+pool.query('SELECT answer  FROM answers;', (err, res) => {
   if (err) {
     console.log(err.stack)
   } else {
