@@ -8,12 +8,12 @@ const {Pool} = require('pg');
 const pool = new Pool({
   user: 'postgres',
   host: '127.0.0.1',
-  database: 'examen',
+  database: 'valquiria',
   password: 'postgres',
   port: 5432,
 })
 //Usamos el metodo query
-pool.query('SELECT answer  FROM answers;', (err, res) => {
+pool.query('SELECT * FROM mir;', (err, res) => {
   if (err) {
     console.log(err.stack)
   } else {
