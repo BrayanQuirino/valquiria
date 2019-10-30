@@ -16,7 +16,7 @@ let programa=['E011','E012','E013','E016','E021','E022','E041','E042','E043','P0
 //Abrimos el archivo
 for(i in anno){
     for (j in programa){
-        let lecdata= fs.readFileSync('../../../salida_"'+programa[j]+'"_"'+anno[i]+'".json');
+        let lecdata= fs.readFileSync('../../jsons/salida_'+programa[j]+'_'+anno[i]+'.json');
         //Formateamos los datos
         let trans = JSON.parse(lecdata);
         //Obtenemos el numero de estructuras u objetos JSON dentro del archivo
