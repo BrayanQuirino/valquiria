@@ -9,7 +9,7 @@ CREATE TABLE mir (
   u_admi VARCHAR,
   nivel VARCHAR,
   mes VARCHAR,
-  mes_num, INTEGER,
+  mes_num INTEGER,
   programado INTEGER,
   acumulado INTEGER,
   realizado INTEGER,
