@@ -9,7 +9,7 @@ const pool = new Pool({
   user: 'postgres',
   host: '127.0.0.1',
   database: 'valquiria',
-  password: '',
+  password: 'postgres',
   port: 5432,
 })
 let anno=['2018','2019','2020'];
@@ -17,46 +17,50 @@ let programa=['E011','E012','E013','E016','E021','E022','E041','E042','E043','P0
 //Abrimos el archivo
 for(i in anno){
     for (j in programa){
-            console.log(anno[i],programa[j]);
+            
             if(fs.existsSync('../../jsons/salida_'+programa[j]+'_'+anno[i]+'.json')){
-            let lecdata= fs.readFileSync('../../jsons/salida_'+programa[j]+'_'+anno[i]+'.json');
-	   //Formateamos los datos
-            let trans = JSON.parse(lecdata);
-            //Obtenemos el numero de estructuras u objetos JSON dentro del archivo
-            let count= Object.keys(trans).length-1;
-            for (z=0; z<count; z++){
-            //Obtenemos el dato especifico que nos interesa	
-            const meta=trans[z].meta;
-            const u_admi=trans[z].u_siglas;
-            const nivel=trans[z].smir_sid;
-            //La funcion nombre solo se usara si no tengo el nombre del mes
-            const mes=nombre(trans[z].mes);
-            const mes_num=trans[z].mes;
-            const programado=trans[z].acum_meta;
-            const acumulado=trans[z].acum_avance;
-            const realizado=trans[z].avance;
-            const diferencia=programado-acumulado;
-            let porcentaje;
-            if(programado<=0){
-            porcentaje= '-';
-            }else{
-            porcentaje=(acumulado*100)/programado;
-            }
-            console.log(meta,u_admi,nivel,mes,mes_num,programado,acumulado,realizado,diferencia,porcentaje);
-            //Insertamos en la BD
-            pool.query("INSERT INTO mir (meta,u_admi,nivel,mes,mes_num,programado,acumulado,realizado,diferencia,porcentaje) VALUES( '" +meta+ "','"+u_admi+"','"+nivel+"',"+mes+","+mes_num+","+programado+","+acumulado+","+realizado+","+diferencia+",'"+porcentaje+"%');", (err, res) => {
-            if (err) {
-                console.log(err.stack)
-            } else {
-                console.log("Insert sucessfuly"+ avance,u_administrativa);
-            }
-            })
-            }
+                console.log(anno[i],programa[i]);
+                let lecdata= fs.readFileSync('../../jsons/salida_'+programa[j]+'_'+anno[i]+'.json');
+                //Formateamos los datos
+                let trans = JSON.parse(lecdata);
+                //Obtenemos el numero de estructuras u objetos JSON dentro del archivo
+                let count= Object.keys(trans).length-1;
+                for (z=0; z<count; z++){
+                    //Obtenemos el dato especifico que nos interesa	
+                    let meta=trans[z].meta;
+                    let u_admi=trans[z].u_siglas;
+                    let nivel=trans[z].smir_sid;
+                    //La funcion nombre solo se usara si no tengo el nombre del mes
+                    let mes=nombre(trans[z].mes);
+                    let mes_num=trans[z].mes;
+                    let programado=trans[z].acum_meta;
+                    let acumulado=trans[z].acum_avance;
+                    let realizado=trans[z].avance;
+                    let diferencia=programado-acumulado;
+                    let porcentaje;
+                    if(programado<=0){
+                        porcentaje= '-';
+                    }else{
+                        porcentaje=(acumulado*100)/programado;
+                    }
+                    let array=[meta,u_admi,nivel,mes,mes_num,programado,acumulado,realizado,diferencia,porcentaje];
+                    for( w in array){
+                        if(array[w]==null || array[w]==undefined){
+                            array[w]=0;
+                        }
+                    }
+                    pool.query("INSERT INTO mir (meta,u_admi,nivel,mes,mes_num,programado,acumulado,realizado,diferencia,porcentaje) VALUES( " +array[0]+ ",'"+array[1]+"','"+array[2]+"','"+array[3]+"',"+array[4]+","+array[5]+","+array[6]+","+array[7]+","+array[8]+",'"+array[9]+"%');", (err, res) => {
+                    if (err) {
+                        console.log(err.stack)
+                    }else{
+                        console.log(array);
+                         }
+                    })
+                }
         }
     }
 }
 pool.end();
-
 function nombre(mes){
  switch(mes){
   case 1:
