@@ -57,7 +57,7 @@ app.post('/valquiria', requestVerifier, function(req, res) {
         let nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         let pp=req.body.request.intent.slots.pp.value.toUpperCase();
         console.log(mes,nivel,pp);
-        res.json(select('2019',req.pp,nivel,mes));
+        res.json(select('2019',pp,nivel,mes));
         break; 
       default:
 
@@ -171,7 +171,7 @@ function requestVerifier(req, res, next) {
 
   function select(anno,pp,nivel,mes){
     let string= "SELECT acumulado FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes= '"+mes+"' and nivel= '"+nivel+"';";
-    return 'Vas...'+con.qry();
+    return 'Vas...'+con.qry(string);
   }
 
 

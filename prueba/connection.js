@@ -7,11 +7,13 @@ let pool = new Pool({
     port: 5432,
   })
   function qry(string){
+    console.log(string);
     pool.query(string, (err, res) => {
         if (err) {
             console.log(err.stack)
         }else{
-            return res.rows[0];
+            console.log('Llegue aqui',res.rows[0].acumulado);
+            return JSON.stringify(res.rows[0]);
         }
         })
     pool.end();
