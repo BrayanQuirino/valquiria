@@ -7,17 +7,16 @@ let pool = new Pool({
     port: 5432,
   })
  async function qry(string){
-    console.log(string);
     let respuesta;
-    await pool.query(string, async (err, res) => {
+    await pool.query(string, (err, res) => {
         if (err) {
            console.log(err.stack)
         }else{
-            await console.log('Llegue aqui',res.rows[0].acumulado);
-            respuesta=await res.rows[0].acumulado;
+            console.log('Llegue aqui',res.rows[0].acumulado);
+            respuesta= res.rows[0].acumulado;
         }
         })
-    pool.end();
+    await pool.end();
     console.log(respuesta);
     return respuesta;
   }

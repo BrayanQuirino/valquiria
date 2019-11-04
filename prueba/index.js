@@ -34,7 +34,7 @@ app.use(bodyParser.json({
 }));
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
-app.post('/valquiria', requestVerifier, function(req, res) {
+app.post('/valquiria', requestVerifier, async function(req, res) {
 
   if (req.body.request.type === 'LaunchRequest') {
     res.json(welcome());
@@ -56,8 +56,8 @@ app.post('/valquiria', requestVerifier, function(req, res) {
         let mes= req.body.request.intent.slots.mes.value;
         let nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         let pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        console.log(mes,nivel,pp);
-        res.json(select('2019',pp,nivel,mes));
+        let re=await select('2019',pp,nivel,mes);
+        res.json(re);
         break; 
       default:
 
@@ -175,8 +175,8 @@ async function select(anno,pp,nivel,mes){
     const speechOutput= 'Vas...'+respuesta;
     console.log(speechOutput);
     const reprompt = HELP_REPROMPT
-    var jsonObj = buildResponseWithRepromt(speechOutput, false, "", reprompt);
-    return jsonObj;
+    var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
+   return await jsonObj;
   }
 
 

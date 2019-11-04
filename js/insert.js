@@ -40,7 +40,8 @@ for(i in anno){
                     if(programado<=0){
                         porcentaje= '-';
                     }else{
-                        porcentaje=(acumulado*100)/programado;
+                        porcentaje=((acumulado*100)/programado).toFixed(2);
+                        
                     }
                     let array=[meta,u_admi,nivel,mes,mes_num,programado,acumulado,realizado,diferencia,porcentaje];
                     for( w in array){
