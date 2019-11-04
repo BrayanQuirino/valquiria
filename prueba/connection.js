@@ -6,17 +6,20 @@ let pool = new Pool({
     password: 'postgres',
     port: 5432,
   })
-  function qry(string){
+ async function qry(string){
     console.log(string);
-    pool.query(string, (err, res) => {
+    let respuesta;
+    await pool.query(string, async (err, res) => {
         if (err) {
-            console.log(err.stack)
+           console.log(err.stack)
         }else{
-            console.log('Llegue aqui',res.rows[0].acumulado);
-            return JSON.stringify(res.rows[0]);
+            await console.log('Llegue aqui',res.rows[0].acumulado);
+            respuesta=await res.rows[0].acumulado;
         }
         })
     pool.end();
+    console.log(respuesta);
+    return respuesta;
   }
 
   exports.qry=qry;

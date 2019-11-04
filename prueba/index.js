@@ -169,9 +169,14 @@ function requestVerifier(req, res, next) {
     return jsonObj
   }    
 
-  function select(anno,pp,nivel,mes){
+async function select(anno,pp,nivel,mes){
     let string= "SELECT acumulado FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes= '"+mes+"' and nivel= '"+nivel+"';";
-    return 'Vas...'+con.qry(string);
+    let respuesta= await con.qry(string);
+    const speechOutput= 'Vas...'+respuesta;
+    console.log(speechOutput);
+    const reprompt = HELP_REPROMPT
+    var jsonObj = buildResponseWithRepromt(speechOutput, false, "", reprompt);
+    return jsonObj;
   }
 
 
