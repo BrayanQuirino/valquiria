@@ -14,6 +14,8 @@ CREATE TABLE mir (
   acumulado INTEGER,
   realizado INTEGER,
   diferencia INTEGER,
-  porcentaje VARCHAR
+  porcentaje VARCHAR,
+  anno VARCHAR,
+  programa VARCHAR
 );
 
