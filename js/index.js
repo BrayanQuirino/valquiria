@@ -11,12 +11,12 @@ const https=require('https');
 const Speech = require ('ssml-builder');
 const directoryToServe='client'
 const SKILL_NAME = 'valquiria';
-let WELCOME_MESSAGE='Bienvenido al baúl de BD. ';
+let WELCOME_MESSAGE='Bienvenido al nuevo SISC ';
 const HELP_MESSAGE = 'Puedes decir ayuda, o, salir... ¿Qué quieres hacer?';
 const HELP_REPROMPT = '¿En qué puedo ayudarte?';
-const MORE_MESSAGE = 'Preguntame algo';
+const MORE_MESSAGE = 'Pregúntame algo';
 const STOP_MESSAGE = 'Disfruta el día...adios!';
-const con=require('./connection');
+let con=require('./connection');
 const PAUSE = '<break time="0.3s" />';
 const WHISPER = '<amazon:effect name="whispered">';
 const CLOSE_WHISPER ='</amazon:effect>';
@@ -54,10 +54,13 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         break;
       case 'principal':
         peticion='porcentaje';
-        let mes= req.body.request.intent.slots.mes.value;
+        let date=new Date();
+        let mes= con.s(date.getMonth()+1);
+        //console.log(mes);
+        let year=date.getFullYear();
         let nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         let pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        let re=await select(peticion,'2019',pp,nivel,mes);
+        let re=await select(peticion,year,pp,nivel,mes);
         res.json(re);
         break; 
       default:
@@ -171,7 +174,7 @@ function requestVerifier(req, res, next) {
   }    
 
 async function select(peticion,anno,pp,nivel,mes){
-    let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes= '"+mes+"' and nivel= '"+nivel+"';";
+    let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"';";
     let respuesta= await con.qry(string,peticion);
     const speechOutput= 'Vamos al '+respuesta;
     //console.log(speechOutput);
@@ -179,7 +182,6 @@ async function select(peticion,anno,pp,nivel,mes){
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
    return await jsonObj;
   }
-
 
 app.listen(8180);
 https.createServer(httpsOptions,app).listen(port,function(){
