@@ -27,10 +27,10 @@ let express = require('express'),
 let alexaVerifier = require('alexa-verifier');
 let peticion;
 let lastIntent='';
+let mes;
 let nivel;
 let pp;
 let date;
-let si=false;
 var isFisrtTime = true;
 const directoryToServe='client'
 const SKILL_NAME = 'valquiria';
@@ -38,7 +38,6 @@ let WELCOME_MESSAGE='Bienvenido al nuevo SISC ';
 const HELP_MESSAGE = 'Puedes decir ayuda, o, salir... ¿Qué quieres hacer?';
 const HELP_REPROMPT = '¿En qué puedo ayudarte?';
 const MORE_MESSAGE = '¿Quieres saber más?';
-const MORE_MESSAGET='Puedo decirte como estabamos el trimeste anterior, ¿te gustaría saber?'
 const STOP_MESSAGE = 'Disfruta el día...adios!';
 const PAUSE = '<break time="0.3s" />';
 const WHISPER = '<amazon:effect name="whispered">';
@@ -71,12 +70,11 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
   } else if (req.body.request.type === 'SessionEndedRequest') { /* ... */
     log("Session End")
   } else if (req.body.request.type === 'IntentRequest') {
-      let mes;
       let year;
       let re;
     switch (req.body.request.intent.name) {
       case 'AMAZON.YesIntent':
-        re= await yes();
+        re= await yes(mes);
         res.json(re);
         break;
       case 'AMAZON.NoIntent':
@@ -102,7 +100,8 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
         date=new Date();
-        mes=con.s(date.getMonth()+1);
+	console.log(req.body.request.intent.slots.trim.value);
+        mes=con.sName(req.body.request.intent.slots.trim.value);
         year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         pp=req.body.request.intent.slots.pp.value.toUpperCase();
@@ -116,34 +115,12 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
 /**
  * @function yes funcion que esta correlacionada con el intent Amazon.YesIntent
  */
-async function yes(){
+async function yes(mes){
   date=new Date();
-  let mes=date.getMonth()+1;
   let year=date.getFullYear();
   let re;
-  switch(lastIntent){
-    case 'principal':
-        re=await selectAll(year,pp,nivel,mes);
-      return re;
-      break;
-    case 'trimestre':
-        if(si){
-          si=false;
-          aux=con.s(mes); 
-          if(aux>3){
-            aux-=3;
-            re=await selectAll(year,pp,nivel,aux);
-          }else{
-            re =buildResponseWithRepromt('¡No existen trimestres anteriores maestro! '+HELP_MESSAGE, false, "SELECT", HELP_REPROMPT);
-          }
-        }else{
-          si=true;
-          re=await selectAll(year,pp,nivel,con.s(mes));
-        }
-        return re;
-      break; 
-  }
-
+  re=await selectAll(year,pp,nivel,mes);
+  return re;
 }
 function requestVerifier(req, res, next) {
     alexaVerifier(
@@ -293,17 +270,11 @@ async function selectAll(anno,pp,nivel,mes){
     let respuesta= await con.qryAll(string,peticion);
     let speechOutput;
     if(respuesta != null){
-      if(lastIntent=='trimestre'){
-        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE+' '+MORE_MESSAGET;
-      }else{
-        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE
-      }
+      speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+      + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE;
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
-    //console.log(speechOutput);
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
    return await jsonObj;

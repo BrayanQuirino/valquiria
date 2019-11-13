@@ -78,6 +78,27 @@ async function qry(string,peticion){
     }
   }
 
+  function sName(trimestre){
+    let date=new Date();
+    let mes;
+console.log(trimestre);
+    switch(trimestre){
+      case 'este','ultimo','último':
+        mes=s(date.getMonth()+1);
+        return mes;
+        break;
+      case 'primero', 'primer','1.??':
+        return 3;
+        break;
+      case 'segundo', 'intermedio','2.º':
+        return 6;
+        break;
+      default:
+        return s(date.getMonth()+1);
+        break;
+    }
+  }
   exports.qry=qry;
   exports.s=s;
   exports.qryAll=qryAll;
+  exports.sName=sName;
