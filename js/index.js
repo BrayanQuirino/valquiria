@@ -29,6 +29,8 @@ let peticion;
 let lastIntent='';
 let nivel;
 let pp;
+let date;
+let si=false;
 var isFisrtTime = true;
 const directoryToServe='client'
 const SKILL_NAME = 'valquiria';
@@ -36,6 +38,7 @@ let WELCOME_MESSAGE='Bienvenido al nuevo SISC ';
 const HELP_MESSAGE = 'Puedes decir ayuda, o, salir... ¿Qué quieres hacer?';
 const HELP_REPROMPT = '¿En qué puedo ayudarte?';
 const MORE_MESSAGE = '¿Quieres saber más?';
+const MORE_MESSAGET='Puedo decirte como estabamos el trimeste anterior, ¿te gustaría saber?'
 const STOP_MESSAGE = 'Disfruta el día...adios!';
 const PAUSE = '<break time="0.3s" />';
 const WHISPER = '<amazon:effect name="whispered">';
@@ -68,10 +71,13 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
   } else if (req.body.request.type === 'SessionEndedRequest') { /* ... */
     log("Session End")
   } else if (req.body.request.type === 'IntentRequest') {
+      let mes;
+      let year;
+      let re;
     switch (req.body.request.intent.name) {
       case 'AMAZON.YesIntent':
-        let rar= await yes();
-        res.json(rar);
+        re= await yes();
+        res.json(re);
         break;
       case 'AMAZON.NoIntent':
         lastIntent=req.body.request.intent.name;
@@ -84,16 +90,26 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
       case 'principal':
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
-        let date=new Date();
-        let mes=date.getMonth()+1;
-        let year=date.getFullYear();
+        date=new Date();
+        mes=date.getMonth()+1;
+        year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        let re=await select(peticion,year,pp,nivel,mes);
+        re=await select(peticion,year,pp,nivel,mes);
         res.json(re);
-        break; 
+        break;
+      case 'trimestre':
+        lastIntent=req.body.request.intent.name;
+        peticion='porcentaje';
+        date=new Date();
+        mes=con.s(date.getMonth()+1);
+        year=date.getFullYear();
+        nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
+        pp=req.body.request.intent.slots.pp.value.toUpperCase();
+        re=await select(peticion,year,pp,nivel,mes);
+        res.json(re);
+        break;  
       default:
-
     }
   }
 });
@@ -101,13 +117,30 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
  * @function yes funcion que esta correlacionada con el intent Amazon.YesIntent
  */
 async function yes(){
+  date=new Date();
+  let mes=date.getMonth()+1;
+  let year=date.getFullYear();
+  let re;
   switch(lastIntent){
     case 'principal':
-      let date=new Date();
-      let mes=date.getMonth()+1;
-      let year=date.getFullYear();
-      let re=await selectAll(year,pp,nivel,mes);
+        re=await selectAll(year,pp,nivel,mes);
       return re;
+      break;
+    case 'trimestre':
+        if(si){
+          si=false;
+          aux=con.s(mes); 
+          if(aux>3){
+            aux-=3;
+            re=await selectAll(year,pp,nivel,aux);
+          }else{
+            re =buildResponseWithRepromt('¡No existen trimestres anteriores maestro! '+HELP_MESSAGE, false, "SELECT", HELP_REPROMPT);
+          }
+        }else{
+          si=true;
+          re=await selectAll(year,pp,nivel,con.s(mes));
+        }
+        return re;
       break; 
   }
 
@@ -233,7 +266,16 @@ function requestVerifier(req, res, next) {
 async function select(peticion,anno,pp,nivel,mes){
     let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
     let respuesta= await con.qry(string,peticion);
-    const speechOutput= 'Vamos al '+respuesta+' '+ MORE_MESSAGE;
+    let speechOutput;
+    if(respuesta != null){
+      if(lastIntent=='principal'){
+        speechOutput= 'Vamos al '+respuesta+' '+ MORE_MESSAGE;
+      }else{
+        speechOutput= 'Este trimestre vamos al '+respuesta+' '+ MORE_MESSAGE;
+      }
+    }else{
+      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+    }
     //console.log(speechOutput);
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
@@ -249,8 +291,18 @@ async function select(peticion,anno,pp,nivel,mes){
 async function selectAll(anno,pp,nivel,mes){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
     let respuesta= await con.qryAll(string,peticion);
-    const speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-    + respuesta[1]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE+' '+ MORE_MESSAGE;
+    let speechOutput;
+    if(respuesta != null){
+      if(lastIntent=='trimestre'){
+        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE+' '+MORE_MESSAGET;
+      }else{
+        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE
+      }
+    }else{
+      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+    }
     //console.log(speechOutput);
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);

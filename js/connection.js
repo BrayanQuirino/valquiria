@@ -21,8 +21,10 @@ async function qry(string,peticion){
     await pool.query(string, (err, res) => {
         if (err) {
            console.log(err.stack)
-        }else{
+        }else if(res != undefined && res != null){
             respuesta= res.rows[0].porcentaje;
+        }else{
+          respuesta= null;
         }
         })
     await pool.end();
@@ -46,11 +48,13 @@ async function qry(string,peticion){
     await pool.query(string, (err, res) => {
         if (err) {
            console.log(err.stack)
-        }else{
+        }else if(res != undefined && res != null){
             respuesta.push(res.rows[0].programado);
             respuesta.push(res.rows[0].acumulado);
             respuesta.push(res.rows[0].realizado);
             respuesta.push(res.rows[0].diferencia);
+        }else{
+          respuesta=null;
         }
         })
     await pool.end();
