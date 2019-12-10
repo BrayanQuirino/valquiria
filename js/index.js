@@ -31,6 +31,7 @@ let mes;
 let nivel;
 let pp;
 let date;
+let conjugacion=true;
 var isFisrtTime = true;
 const directoryToServe='client'
 const SKILL_NAME = 'valquiria';
@@ -93,19 +94,27 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        re=await select(peticion,year,pp,nivel,mes);
+        re=await select(peticion,year,pp,nivel,mes,'');
         res.json(re);
         break;
       case 'trimestre':
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
         date=new Date();
-	console.log(req.body.request.intent.slots.trim.value);
+	      console.log('El valor',req.body.request.intent.slots.trim.value);
         mes=con.sName(req.body.request.intent.slots.trim.value);
+        console.log('El mes',mes);
+        var auxconjugacion='Este trimestre vamos al ';
+        if(con.sName(date.getMonth()+1)>mes){
+          conjugacion=false;
+          auxconjugacion='Íbamos al ';
+        }else{
+          conjugacion=true;
+        }
         year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        re=await select(peticion,year,pp,nivel,mes);
+        re=await select(peticion,year,pp,nivel,mes,auxconjugacion);
         res.json(re);
         break;  
       default:
@@ -119,7 +128,11 @@ async function yes(mes){
   date=new Date();
   let year=date.getFullYear();
   let re;
-  re=await selectAll(year,pp,nivel,mes);
+  if(conjugacion){
+    re=await selectAll(year,pp,nivel,mes,'Este trimestre hemos realizado ');
+  }else{
+    re=await selectAll(year,pp,nivel,mes,'Realizamos ');
+  }
   return re;
 }
 function requestVerifier(req, res, next) {
@@ -240,16 +253,17 @@ function requestVerifier(req, res, next) {
  * @param {select} nivel nivel (F1,F2,etc)
  * @param {select} mes mes que se quiere saber.
  */
-async function select(peticion,anno,pp,nivel,mes){
+async function select(peticion,anno,pp,nivel,mes,conjugacion){
     let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
     let respuesta= await con.qry(string,peticion);
     let speechOutput;
     if(respuesta != null){
       if(lastIntent=='principal'){
         speechOutput= 'Vamos al '+respuesta+' '+ MORE_MESSAGE;
-      }else{
-        speechOutput= 'Este trimestre vamos al '+respuesta+' '+ MORE_MESSAGE;
+      }else if(lastIntent=='trimestre'){
+        speechOutput= ''+conjugacion+''+respuesta+' '+ MORE_MESSAGE;
       }
+
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
@@ -265,13 +279,19 @@ async function select(peticion,anno,pp,nivel,mes){
  * @param {selectAll} nivel 
  * @param {selectAll} mes 
  */
-async function selectAll(anno,pp,nivel,mes){
+async function selectAll(anno,pp,nivel,mes,conjugacion){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
     let respuesta= await con.qryAll(string,peticion);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-      + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+PAUSE;
+      if(lastIntent=='principal'){
+        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE;
+      }else if(lastIntent=='trimestre'){
+        speechOutput= ''+conjugacion+''+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE;
+      }
+      
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
