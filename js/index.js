@@ -93,7 +93,8 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         mes=date.getMonth()+1;
         year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
-        pp=req.body.request.intent.slots.pp.value.toUpperCase();
+        console.log(req.body.request.intent.slots);
+	pp=req.body.request.intent.slots.pp.value.toUpperCase();
         re=await select(peticion,year,pp,nivel,mes,'');
         res.json(re);
         break;

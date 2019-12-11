@@ -8,6 +8,8 @@ let {Pool} = require('pg');
  * @param {qry} string la consulta
  * @param {qry} peticion SIGO TRABAJANDO EN GENERALIZAR LAS CONSULTAS
  */
+let tercer='3.ᵉʳ';
+let primer= '1.ᵉʳ'
 async function qry(string,peticion){
     let pool = new Pool({
       user: 'postgres',
@@ -87,13 +89,13 @@ async function qry(string,peticion){
         mes=s(date.getMonth()+1);
         return mes;
         break;
-      case 'primero', 'primer','1.??','1.ᵉʳ':
+      case 'primero', 'primer','1.??','1.ᵉʳ',1,primer:
         return 3;
         break;
-      case 'segundo', 'intermedio','2.º':
+      case 'segundo', 'intermedio','2.º',2:
         return 6;
         break;
-      case 'tercero','tercer','3.ᵉʳ','3.??':
+      case 'tercero','tercer','3.ᵉʳ','3.??',3,tercer:
         return 9;
         break;
       default:
