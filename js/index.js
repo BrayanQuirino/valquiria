@@ -71,11 +71,12 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
   } else if (req.body.request.type === 'SessionEndedRequest') { /* ... */
     log("Session End")
   } else if (req.body.request.type === 'IntentRequest') {
-      let year;
+      date=new Date();
+      let year=date.getFullYear();
       let re;
     switch (req.body.request.intent.name) {
       case 'AMAZON.YesIntent':
-        re= await yes(mes);
+        re= await yes(year,pp,nivel,mes);
         res.json(re);
         break;
       case 'AMAZON.NoIntent':
@@ -89,15 +90,32 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
       case 'principal':
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
-        date=new Date();
         mes=date.getMonth()+1;
-        year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         console.log(req.body.request.intent.slots);
-	pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        re=await select(peticion,year,pp,nivel,mes,'');
+	      pp=req.body.request.intent.slots.pp.value.toUpperCase();
+        re=await select(peticion,year,pp,nivel,mes,'Vamos al ');
         res.json(re);
         break;
+      case 'palmas':
+          peticion='porcentaje';
+          lastIntent=req.body.request.intent.name;
+          if(lastIntent=='principal'){
+            re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+          }else if(lastIntent=='trimestre'){
+            if(conjugacion){
+              re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas este trimestre es...'+PAUSE);
+            }else{
+              re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se llevó las palmas fue...'+PAUSE);
+           }
+          }else{
+            mes=date.getMonth()+1;
+            nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
+            pp=req.body.request.intent.slots.pp.value.toUpperCase();
+            re=await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+          }
+          res.json(re);
+          break;
       case 'trimestre':
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
@@ -112,7 +130,6 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         }else{
           conjugacion=true;
         }
-        year=date.getFullYear();
         nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         pp=req.body.request.intent.slots.pp.value.toUpperCase();
         re=await select(peticion,year,pp,nivel,mes,auxconjugacion);
@@ -125,15 +142,23 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
 /**
  * @function yes funcion que esta correlacionada con el intent Amazon.YesIntent
  */
-async function yes(mes){
-  date=new Date();
-  let year=date.getFullYear();
+async function yes(year,pp,nivel,mes){
   let re;
-  if(conjugacion){
-    re=await selectAll(year,pp,nivel,mes,'Este trimestre hemos realizado ');
-  }else{
-    re=await selectAll(year,pp,nivel,mes,'Realizamos ');
+  let string='';
+  if(lastIntent=='principal'){
+    string='Este mes hemos realizado ';
+    palmas=true;
+  }else if(lastIntent=='trimestre'){
+    if(conjugacion){
+      string='Este trimestre realizamos '
+    }else{
+      string='Realizamos ';
+    }
+    palmas=true;
+  }else if(palmas){
+
   }
+  re=await selectAll(year,pp,nivel,mes,string);
   return re;
 }
 function requestVerifier(req, res, next) {
@@ -259,12 +284,7 @@ async function select(peticion,anno,pp,nivel,mes,conjugacion){
     let respuesta= await con.qry(string,peticion);
     let speechOutput;
     if(respuesta != null){
-      if(lastIntent=='principal'){
-        speechOutput= 'Vamos al '+respuesta+' '+ MORE_MESSAGE;
-      }else if(lastIntent=='trimestre'){
-        speechOutput= ''+conjugacion+''+respuesta+' '+ MORE_MESSAGE;
-      }
-
+      speechOutput= ''+conjugacion+''+respuesta+' '+ MORE_MESSAGE;
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
@@ -285,14 +305,22 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     let respuesta= await con.qryAll(string,peticion);
     let speechOutput;
     if(respuesta != null){
-      if(lastIntent=='principal'){
-        speechOutput= 'Este mes hemos realizado '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE;
-      }else if(lastIntent=='trimestre'){
-        speechOutput= ''+conjugacion+''+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE;
-      }
-      
+      speechOutput= ''+conjugacion+''+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE; 
+    }else{
+      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+    }
+    const reprompt = HELP_REPROMPT
+    var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
+    return await jsonObj;
+  }
+  async function selectPalmas(anno,pp,nivel,mes,conjugacion){
+    let string= "SELECT DISTINCT(acumulado) FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi != 'TOTAL' ORDER BY acumulado DESC;";
+    let respuesta= await con.qryPalmas(string);
+    let speechOutput;
+    if(respuesta != null){
+      speechOutput= ''+conjugacion+''+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con'
+      + respuesta[1].acumulado+ ' actividades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' actividades.'+PAUSE;
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }

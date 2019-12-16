@@ -9,7 +9,8 @@ let {Pool} = require('pg');
  * @param {qry} peticion SIGO TRABAJANDO EN GENERALIZAR LAS CONSULTAS
  */
 let tercer='3.ᵉʳ';
-let primer= '1.ᵉʳ'
+let primer= '1.ᵉʳ';
+let segundo='2.º';
 async function qry(string,peticion){
     let pool = new Pool({
       user: 'postgres',
@@ -62,6 +63,33 @@ async function qry(string,peticion){
     await pool.end();
     return respuesta;
   }
+  async function qryPalmas(string){
+    let pool = new Pool({
+      user: 'postgres',
+      host: '127.0.0.1',
+      database: 'valquiria',
+      password: 'postgres',
+      port: 5432,
+    })
+    let respuesta=[];
+    await pool.query(string, (err, res) => {
+        if (err) {
+           console.log(err.stack)
+        }else if(res != undefined && res != null){
+          for(i=0;i<3;i++){
+            var json={}
+            json.ua=res.rows[i].u_admi;
+            json.acumulado=res.rows[i].u_admi;
+            respuesta.push(json);
+            console.log(respuesta[i]);
+          }
+        }else{
+          respuesta=null;
+        }
+        })
+    await pool.end();
+    return respuesta;
+  }
   //Funcion que sirve para pedir el trimestre.
   function s(mes){
     switch(mes){
@@ -92,7 +120,7 @@ async function qry(string,peticion){
       case 'primero', 'primer','1.??','1.ᵉʳ',1,primer:
         return 3;
         break;
-      case 'segundo', 'intermedio','2.º',2:
+      case 'segundo', 'intermedio','2.º',2,segundo:
         return 6;
         break;
       case 'tercero','tercer','3.ᵉʳ','3.??',3,tercer:
@@ -104,6 +132,7 @@ async function qry(string,peticion){
     }
   }
   exports.qry=qry;
+  exports.qryPalmas=qryPalmas;
   exports.s=s;
   exports.qryAll=qryAll;
   exports.sName=sName;
