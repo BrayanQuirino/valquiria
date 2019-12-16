@@ -73,16 +73,15 @@ async function qry(string,peticion){
     })
     let respuesta=[];
     await pool.query(string, (err, res) => {
-        if (err) {
+	if (err) {
            console.log(err.stack)
         }else if(res != undefined && res != null){
-          for(i=0;i<3;i++){
+	  for(i=0;i<3;i++){
             var json={}
             json.ua=res.rows[i].u_admi;
-            json.acumulado=res.rows[i].u_admi;
+            json.acumulado=res.rows[i].acumulado;
             respuesta.push(json);
-            console.log(respuesta[i]);
-          }
+          }  
         }else{
           respuesta=null;
         }

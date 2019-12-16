@@ -99,14 +99,13 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         break;
       case 'palmas':
           peticion='porcentaje';
-          lastIntent=req.body.request.intent.name;
           if(lastIntent=='principal'){
-            re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+              re = await selectPalmas(year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
           }else if(lastIntent=='trimestre'){
             if(conjugacion){
-              re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas este trimestre es...'+PAUSE);
+              re = await selectPalmas(year,pp,nivel,mes,'Quien se lleva las palmas este trimestre es...'+PAUSE);
             }else{
-              re = await selectPalmas(peticion,year,pp,nivel,mes,'Quien se llevó las palmas fue...'+PAUSE);
+              re = await selectPalmas(year,pp,nivel,mes,'Quien se llevó las palmas fue...'+PAUSE);
            }
           }else{
             mes=date.getMonth()+1;
@@ -115,6 +114,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
             re=await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
           }
           res.json(re);
+          lastIntent=req.body.request.intent.name;
           break;
       case 'trimestre':
         lastIntent=req.body.request.intent.name;
@@ -315,11 +315,11 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     return await jsonObj;
   }
   async function selectPalmas(anno,pp,nivel,mes,conjugacion){
-    let string= "SELECT DISTINCT(acumulado) FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi != 'TOTAL' ORDER BY acumulado DESC;";
+    let string= "SELECT DISTINCT(acumulado),u_admi FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi != 'TOTAL' ORDER BY acumulado DESC;";
     let respuesta= await con.qryPalmas(string);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= ''+conjugacion+''+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con'
+      speechOutput= ''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
       + respuesta[1].acumulado+ ' actividades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' actividades.'+PAUSE;
     }else{
       speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
