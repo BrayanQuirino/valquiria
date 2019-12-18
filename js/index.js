@@ -98,8 +98,10 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         res.json(re);
         break;
       case 'palmas':
+          console.log(req.body.request.intent);
           peticion='porcentaje';
-          if(lastIntent=='principal'){
+          re= palmasSlotpp();
+          /*if(lastIntent=='principal'){
               re = await selectPalmas(year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
           }else if(lastIntent=='trimestre'){
             if(conjugacion){
@@ -112,7 +114,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
             nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
             pp=req.body.request.intent.slots.pp.value.toUpperCase();
             re=await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
-          }
+          }*/
           res.json(re);
           lastIntent=req.body.request.intent.name;
           break;
@@ -270,7 +272,42 @@ function requestVerifier(req, res, next) {
      }
    }
     return jsonObj
-  }    
+  }
+  
+  function palmasSlotpp(){
+    var jsonObj={
+      "version": "1.0",
+      "sessionAttributes": {},
+      "response": {
+        "outputSpeech": {
+          "type": "PlainText",
+          "text": "¿Puedes repetirme el programa presupuestal y el nivel?"
+        },
+        "shouldEndSession": false,
+        "directives": [
+          {
+            "type": "Dialog.ElicitSlot",
+            "slotToElicit": "pp",
+            "updatedIntent": {
+              "name": "palmas",
+              "confirmationStatus": "NONE",
+              "slots": {
+                "pp": {
+                  "name": "pp",
+                  "confirmationStatus": "NONE"
+                },
+                "nivel": {
+                  "name": "nivel",
+                  "confirmationStatus": "NONE"               
+                 }
+                }
+              }
+          }
+        ]
+      }
+    }
+    return jsonObj;
+  }
 /**
  * 
  * @param {slecet} peticion la peticion del usuario(el dato a seleccionar)
