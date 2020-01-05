@@ -100,22 +100,37 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
       case 'palmas':
           console.log(req.body.request.intent);
           peticion='porcentaje';
-          re= palmasSlotpp();
-          /*if(lastIntent=='principal'){
+          if(lastIntent=='principal'){
               re = await selectPalmas(year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+              res.json(re);
           }else if(lastIntent=='trimestre'){
             if(conjugacion){
               re = await selectPalmas(year,pp,nivel,mes,'Quien se lleva las palmas este trimestre es...'+PAUSE);
+              res.json(re);
             }else{
               re = await selectPalmas(year,pp,nivel,mes,'Quien se llevó las palmas fue...'+PAUSE);
+              res.json(re);
            }
           }else{
-            mes=date.getMonth()+1;
-            nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
-            pp=req.body.request.intent.slots.pp.value.toUpperCase();
-            re=await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
-          }*/
-          res.json(re);
+            if(req.body.request.intent.slots.pp.value== undefined || req.body.request.intent.slots.pp.value== null){
+              re=palmasSlotpp();
+              res.json(re);
+	      return;
+            }else{
+              pp=req.body.request.intent.slots.pp.value.toUpperCase();
+              res.json(re);
+            }
+            if(req.body.request.intent.slots.nivel.value== undefined || req.body.request.intent.slots.nivel.value== null){
+              re=palmasSlotnivel();
+              res.json(re);
+              return;
+            }else{
+              nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
+              mes=date.getMonth()+1;
+              re=await selectPalmas(peticion,year,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+              res.json(re);
+            }
+          }
           lastIntent=req.body.request.intent.name;
           break;
       case 'trimestre':
@@ -281,7 +296,7 @@ function requestVerifier(req, res, next) {
       "response": {
         "outputSpeech": {
           "type": "PlainText",
-          "text": "¿Puedes repetirme el programa presupuestal y el nivel?"
+          "text": "¿Puedes repetirme el programa presupuestal?"
         },
         "shouldEndSession": false,
         "directives": [
@@ -302,6 +317,40 @@ function requestVerifier(req, res, next) {
                  }
                 }
               }
+          }
+        ]
+      }
+    }
+    return jsonObj;
+  }
+  function palmasSlotnivel(){
+    var jsonObj={
+      "version": "1.0",
+      "sessionAttributes": {},
+      "response": {
+        "outputSpeech": {
+          "type": "PlainText",
+          "text": "¿Cuál es el nivel?"
+        },
+        "shouldEndSession": false,
+        "directives": [
+          {
+            "type": "Dialog.ElicitSlot",
+            "slotToElicit": "nivel",
+            "updatedIntent": {
+              "name": "palmas",
+              "confirmationStatus": "NONE",
+              "slots": {
+                "pp": {
+                  "name": "pp",
+                  "confirmationStatus": "NONE"
+                },
+                "nivel": {
+                  "name": "nivel",
+                  "confirmationStatus": "NONE"               
+                 }
+                }
+            }
           }
         ]
       }
