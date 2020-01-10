@@ -80,15 +80,18 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
       case 'AMAZON.YesIntent':
         re= await yes(year-1,pp,nivel,mes);
         res.json(re);
+	confirmation1=confirmation2=false;
         break;
       case 'AMAZON.NoIntent':
         re=no();
         res.json(re);
+	confirmation1=confirmation2=false;
         break;
       case 'AMAZON.HelpIntent':
         lastIntent=req.body.request.intent.name;
         re=help();
         res.json(re);
+	confirmation1=confirmation2=false;
         break;
       case 'AMAZON.RepeatIntent':
         if(re!= undefined && re != null){
@@ -106,24 +109,25 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
         mes=date.getMonth()+1;
-        console.log(req.body.request.intent.slots);
+        //console.log(req.body.request.intent.slots);
         await resolutionsPp(req.body.request.intent);
         await resolutionsNivel(req.body.request.intent);
         re=await select(peticion,year-1,pp,nivel,mes,'vamos al ');
+	confirmation1=confirmation2=false;
         res.json(re);
         break;
       case 'palmas':
-          console.log(req.body.request.intent);
+          //console.log(req.body.request.intent);
           peticion='porcentaje';
           if(lastIntent=='principal'){
-              re = await selectPalmas(year-1,pp,nivel,mes,'quien se lleva las palmas es...'+PAUSE);
+              re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
               res.json(re);
           }else if(lastIntent=='trimestre'){
             if(conjugacion){
-              re = await selectPalmas(year-1,pp,nivel,mes,'quien se lleva las palmas este trimestre es...'+PAUSE);
+              re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas este trimestre es...'+PAUSE);
               res.json(re);
             }else{
-              re = await selectPalmas(year-1,pp,nivel,mes,'quien se llevó las palmas fue...'+PAUSE);
+              re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se llevó las palmas fue...'+PAUSE);
               res.json(re);
            }
           }else{
@@ -138,7 +142,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
                 }else{
                   await resolutionsNivel(req.body.request.intent);
                   mes=date.getMonth()+1;
-                  re=await selectPalmas(year-1,pp,nivel,mes,'quien se lleva las palmas es...'+PAUSE);
+                  re=await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
                   res.json(re);  
                 }
             }else if((req.body.request.intent.slots.pp.value== undefined || req.body.request.intent.slots.pp.value== null)){
@@ -155,21 +159,23 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         date=new Date();
 	      //console.log('El valor',req.body.request.intent.slots.trim.value);
         mes=con.sName(req.body.request.intent.slots.trim.value);
-        console.log('El mes',mes);
-        var auxconjugacion='Este trimestre vamos al ';
+        //console.log('El mes',mes);
+        var auxconjugacion=PAUSE+'en el '+con.ordinal(mes)+' trimestre vamos al ';
         if(con.sName(date.getMonth()+1)>mes){
           conjugacion=false;
-          auxconjugacion='Íbamos al ';
+          auxconjugacion=PAUSE+'en el '+con.ordinal(mes)+' trimestre íbamos al ';
         }else{
           conjugacion=true;
         }
-	await resolutionsPp(req.body.request.intent);
-	await resolutionsNivel(req.body.request.intent);
+	      await resolutionsPp(req.body.request.intent);
+	      await resolutionsNivel(req.body.request.intent);
         re=await select(peticion,year-1,pp,nivel,mes,auxconjugacion);
         res.json(re);
+	confirmation1=confirmation2=false;
         break;  
       default:
         res.json(nose());
+	confirmation1=confirmation2=false;
         break;
     }
   }
@@ -181,13 +187,13 @@ async function yes(year,pp,nivel,mes){
   let re;
   let string='';
   if(lastIntent=='principal'){
-    string='Este mes hemos realizado ';
+    string='hemos realizado ';
     palmas=true;
   }else if(lastIntent=='trimestre'){
     if(conjugacion){
-      string='Este trimestre realizamos '
+      string='este trimestre realizamos '
     }else{
-      string='Realizamos ';
+      string='realizamos ';
     }
     palmas=true;
   }else if(palmas){
@@ -200,8 +206,8 @@ function resolutionsPp(intent){
   if(intent.slots.pp.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     pp=intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name;
     let values=JSON.stringify(intent.slots.pp.resolutions.resolutionsPerAuthority);
-    console.log(values);
-    console.log(intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name);
+    //console.log(values);
+    //console.log(intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name);
   }else{
     pp=intent.slots.pp.value.toUpperCase();
   }
@@ -211,14 +217,14 @@ let code= intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code;
   if(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     nivel=intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name;
     let values=JSON.stringify(intent.slots.nivel.resolutions.resolutionsPerAuthority);
-    console.log(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name);
+    //console.log(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name);
   }else{
     nivel=intent.slots.nivel.value.toUpperCase();
   }
 }
 function no() {
   const more =MORE_MESSAGE;
-  const tempOutput = 'Ok, lo entiendo. Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
+  const tempOutput = 'Ok, lo entiendo.'+PAUSE+'Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
   +PAUSE+more;
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'NO');
@@ -419,12 +425,12 @@ function requestVerifier(req, res, next) {
  * @param {select} mes mes que se quiere saber.
  */
 async function select(peticion,anno,pp,nivel,mes,conjugacion){
-    let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
+    let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"';";
     let respuesta= await con.qry(string);
-console.log(string);
+//console.log(string);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= 'En el '+pp+' en el '+nivel+' '+conjugacion+' '+respuesta+' '+ MORE_MESSAGE;
+      speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta+' '+ MORE_MESSAGE;
     }else{
       speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
@@ -441,11 +447,11 @@ console.log(string);
  * @param {selectAll} mes 
  */
 async function selectAll(anno,pp,nivel,mes,conjugacion){
-    let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
+    let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"';";
     let respuesta= await con.qryAll(string);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= ''+conjugacion+' en el '+pp+' en el '+nivel+' '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+      speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
         + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE; 
     }else{
       speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
@@ -459,7 +465,7 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     let respuesta= await con.qryPalmas(string);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= 'En el '+pp+' en el '+nivel+' '+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
+      speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
       + respuesta[1].acumulado+ ' actividades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' actividades.'+PAUSE;
     }else{
       speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;

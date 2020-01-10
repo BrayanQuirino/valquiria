@@ -75,7 +75,7 @@ async function qry(string){
     await pool.query(string, (err, res) => {
 	if (err) {
            console.log(err.stack)
-        }else if(res != undefined && res != null && res.rowCount>0){
+        }else if(res != undefined && res != null && res.rowCount>2){
 	  for(i=0;i<3;i++){
             var json={}
             json.ua=res.rows[i].u_admi;
@@ -106,11 +106,10 @@ async function qry(string){
         break;
     }
   }
-
   function sName(trimestre){
     let date=new Date();
     let mes;
-    console.log('Lo que llego',trimestre);
+    //console.log('Lo que llego',trimestre);
     switch(trimestre){
       case 'este','ultimo','último':
         mes=s(date.getMonth()+1);
@@ -130,8 +129,25 @@ async function qry(string){
         break;
     }
   }
+  function ordinal(trim){
+   switch(trim){
+     case 3:
+       return 'primer';
+       break;
+      case 6:
+        return 'segundo';
+        break;
+      case 9: 
+        return 'tercer';
+        break;
+      case 12:
+        return 'cuarto';
+        break;
+   } 
+  }
   exports.qry=qry;
   exports.qryPalmas=qryPalmas;
   exports.s=s;
   exports.qryAll=qryAll;
   exports.sName=sName;
+  exports.ordinal=ordinal;
