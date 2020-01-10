@@ -8,10 +8,10 @@ let {Pool} = require('pg');
  * @param {qry} string la consulta
  * @param {qry} peticion SIGO TRABAJANDO EN GENERALIZAR LAS CONSULTAS
  */
-let tercer='3.ᵉʳ';
-let primer= '1.ᵉʳ';
-let segundo='2.º';
-async function qry(string,peticion){
+let tercer={tr:'3.ᵉʳ', t:'3'};
+let primer={pr: '1.ᵉʳ',p:'1'};
+let segundo={sr:'2.º',s:'2'};
+async function qry(string){
     let pool = new Pool({
       user: 'postgres',
       host: '127.0.0.1',
@@ -24,7 +24,7 @@ async function qry(string,peticion){
     await pool.query(string, (err, res) => {
         if (err) {
            console.log(err.stack)
-        }else if(res != undefined && res != null){
+        }else if(res != undefined && res != null && res.rowCount>0){
             respuesta= res.rows[0].porcentaje;
         }else{
           respuesta= null;
@@ -39,7 +39,7 @@ async function qry(string,peticion){
    * @param {qryAll} string la consulta
    * @param {qryAll} peticion PUEDE QUE ELIMINE ESTO
    */
-  async function qryAll(string,peticion){
+  async function qryAll(string){
     let pool = new Pool({
       user: 'postgres',
       host: '127.0.0.1',
@@ -51,7 +51,7 @@ async function qry(string,peticion){
     await pool.query(string, (err, res) => {
         if (err) {
            console.log(err.stack)
-        }else if(res != undefined && res != null){
+        }else if(res != undefined && res != null && res.rowCount>0){
             respuesta.push(res.rows[0].programado);
             respuesta.push(res.rows[0].acumulado);
             respuesta.push(res.rows[0].realizado);
@@ -75,7 +75,7 @@ async function qry(string,peticion){
     await pool.query(string, (err, res) => {
 	if (err) {
            console.log(err.stack)
-        }else if(res != undefined && res != null){
+        }else if(res != undefined && res != null && res.rowCount>0){
 	  for(i=0;i<3;i++){
             var json={}
             json.ua=res.rows[i].u_admi;
@@ -116,13 +116,13 @@ async function qry(string,peticion){
         mes=s(date.getMonth()+1);
         return mes;
         break;
-      case 'primero', 'primer','1.??','1.ᵉʳ',1,primer:
+      case 'primero', 'primer','1.??','1.ᵉʳ','1',1,primer.pr,primer.p:
         return 3;
         break;
-      case 'segundo', 'intermedio','2.º',2,segundo:
+      case 'segundo', 'intermedio','2.º','2,',2,segundo.sr,segundo.s:
         return 6;
         break;
-      case 'tercero','tercer','3.ᵉʳ','3.??',3,tercer:
+      case 'tercero','tercer','3.ᵉʳ','3.??','3,',3,tercer.tr,tercer.t:
         return 9;
         break;
       default:

@@ -106,31 +106,17 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         lastIntent=req.body.request.intent.name;
         peticion='porcentaje';
         mes=date.getMonth()+1;
-        nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
         console.log(req.body.request.intent.slots);
-        if(req.body.request.intent.slots.pp.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
-          pp=req.body.request.intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name;
-          let values=JSON.stringify(req.body.request.intent.slots.pp.resolutions.resolutionsPerAuthority);
-          console.log(values);
-          console.log(req.body.request.intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name);
-        }else{
-          pp=req.body.request.intent.slots.pp.value.toUpperCase();
-        }
-        if(req.body.request.intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
-          nivel=req.body.request.intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name;
-          let values=JSON.stringify(req.body.request.intent.slots.pp.resolutions.resolutionsPerAuthority);
-          console.log(req.body.request.intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name);
-        }else{
-          nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
-        }
+        await resolutionsPp(req.body.request.intent);
+        await resolutionsNivel(req.body.request.intent);
         re=await select(peticion,year-1,pp,nivel,mes,'vamos al ');
         res.json(re);
         break;
       case 'palmas':
-          //console.log(req.body.request.intent);
+          console.log(req.body.request.intent);
           peticion='porcentaje';
           if(lastIntent=='principal'){
-              re = await selectPalmas(year-1,pp,nivel,mes,'Quien se lleva las palmas es...'+PAUSE);
+              re = await selectPalmas(year-1,pp,nivel,mes,'quien se lleva las palmas es...'+PAUSE);
               res.json(re);
           }else if(lastIntent=='trimestre'){
             if(conjugacion){
@@ -141,16 +127,16 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
               res.json(re);
            }
           }else{
-            if(confimation1){
+            if(confimation1 || (req.body.request.intent.slots.pp.value!=undefined && req.body.request.intent.slots.pp.value != null)){
                 if(!confimation2){
-                  pp=req.body.request.intent.slots.pp.value.toUpperCase();
+                  await resolutionsPp(req.body.request.intent);
                   confimation2=true;
                 }
                 if(req.body.request.intent.slots.nivel.value== undefined || req.body.request.intent.slots.nivel.value== null){
                   re=palmasSlotnivel();
                   res.json(re);
                 }else{
-                  nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
+                  await resolutionsNivel(req.body.request.intent);
                   mes=date.getMonth()+1;
                   re=await selectPalmas(year-1,pp,nivel,mes,'quien se lleva las palmas es...'+PAUSE);
                   res.json(re);  
@@ -169,7 +155,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         date=new Date();
 	      //console.log('El valor',req.body.request.intent.slots.trim.value);
         mes=con.sName(req.body.request.intent.slots.trim.value);
-        //console.log('El mes',mes);
+        console.log('El mes',mes);
         var auxconjugacion='Este trimestre vamos al ';
         if(con.sName(date.getMonth()+1)>mes){
           conjugacion=false;
@@ -177,8 +163,8 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         }else{
           conjugacion=true;
         }
-        nivel=req.body.request.intent.slots.nivel.value.toUpperCase();
-        pp=req.body.request.intent.slots.pp.value.toUpperCase();
+	await resolutionsPp(req.body.request.intent);
+	await resolutionsNivel(req.body.request.intent);
         re=await select(peticion,year-1,pp,nivel,mes,auxconjugacion);
         res.json(re);
         break;  
@@ -210,9 +196,29 @@ async function yes(year,pp,nivel,mes){
   re=await selectAll(year,pp,nivel,mes,string);
   return re;
 }
+function resolutionsPp(intent){
+  if(intent.slots.pp.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
+    pp=intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name;
+    let values=JSON.stringify(intent.slots.pp.resolutions.resolutionsPerAuthority);
+    console.log(values);
+    console.log(intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name);
+  }else{
+    pp=intent.slots.pp.value.toUpperCase();
+  }
+}
+function resolutionsNivel(intent){
+let code= intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code;
+  if(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
+    nivel=intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name;
+    let values=JSON.stringify(intent.slots.nivel.resolutions.resolutionsPerAuthority);
+    console.log(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name);
+  }else{
+    nivel=intent.slots.nivel.value.toUpperCase();
+  }
+}
 function no() {
   const more =MORE_MESSAGE;
-  const tempOutput = 'Ok, lo entiendo. Puedes preguntarme "¿Quien se llevó las palmas?"'+PAUSE;
+  const tempOutput = 'Ok, lo entiendo. Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
   +PAUSE+more;
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'NO');
@@ -220,7 +226,7 @@ function no() {
 }
 function nose() {
   const tempOutput = '¡Vaya! Ahora si me metiste en aprietos, en realidad no sé qué contestar pero me '+
-  'pondré en contacto con los creadores. '+WHISPER+ 'Por lo mientras puedo decirte como nos irá en el siguiente trimestre. '
+  'pondré en contacto con los creadores. '+WHISPER+ 'Puedes preguntarme como nos irá en el siguiente trimestre. '
   +CLOSE_WHISPER+ PAUSE;
   const speechOutput = tempOutput;
   const more = MORE_MESSAGE
@@ -414,12 +420,13 @@ function requestVerifier(req, res, next) {
  */
 async function select(peticion,anno,pp,nivel,mes,conjugacion){
     let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
-    let respuesta= await con.qry(string,peticion);
+    let respuesta= await con.qry(string);
+console.log(string);
     let speechOutput;
     if(respuesta != null){
       speechOutput= 'En el '+pp+' en el '+nivel+' '+conjugacion+' '+respuesta+' '+ MORE_MESSAGE;
     }else{
-      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+      speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
     //console.log(speechOutput);
     const reprompt = HELP_REPROMPT
@@ -435,13 +442,13 @@ async function select(peticion,anno,pp,nivel,mes,conjugacion){
  */
 async function selectAll(anno,pp,nivel,mes,conjugacion){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi like 'TOTAL';";
-    let respuesta= await con.qryAll(string,peticion);
+    let respuesta= await con.qryAll(string);
     let speechOutput;
     if(respuesta != null){
       speechOutput= ''+conjugacion+' en el '+pp+' en el '+nivel+' '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
         + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE; 
     }else{
-      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+      speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
@@ -455,7 +462,7 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
       speechOutput= 'En el '+pp+' en el '+nivel+' '+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
       + respuesta[1].acumulado+ ' actividades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' actividades.'+PAUSE;
     }else{
-      speechOutput='Lo siento, no pude encontar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+      speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
