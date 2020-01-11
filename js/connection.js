@@ -75,13 +75,22 @@ async function qry(string){
     await pool.query(string, (err, res) => {
 	if (err) {
            console.log(err.stack)
-        }else if(res != undefined && res != null && res.rowCount>2){
-	  for(i=0;i<3;i++){
-            var json={}
-            json.ua=res.rows[i].u_admi;
-            json.acumulado=res.rows[i].acumulado;
-            respuesta.push(json);
-          }  
+        }else if(res != undefined && res != null && res.rowCount>0){
+          if(res.rowCount>=3){
+            for(i=0;i<3;i++){
+              var json={}
+              json.ua=res.rows[i].u_admi;
+              json.acumulado=res.rows[i].acumulado;
+              respuesta.push(json);
+            }  
+          }else{
+            for(i=0;i<res.rowCount;i++){
+              var json={}
+              json.ua=res.rows[i].u_admi;
+              json.acumulado=res.rows[i].acumulado;
+              respuesta.push(json);
+            }  
+          }
         }else{
           respuesta=null;
         }
