@@ -20,6 +20,7 @@ const path=require('path');
 const https=require('https');
 const Speech = require ('ssml-builder');
 let con=require('./connection');
+let pre=require('./prediccion');
 let express = require('express'),
   bodyParser = require('body-parser'),
   port = 443,
@@ -196,6 +197,15 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
 	      confirmation1=confirmation2=false;
         res.json(re);
         break;  
+      case 'prediccion':
+        lastIntent=req.body.request.intent.name;
+        mes=date.getMonth()+1;
+        await resolutionsNivel(req.body.request.intent);
+        await resolutionsPp(req.body.request.intent);
+        re=await selectPre(year-1,pp,nivel,mes);
+        res.json(re);
+        confirmation1=confirmation2=false;
+        break;
       default:
         res.json(nose());
 	      confirmation1=confirmation2=false;
@@ -507,6 +517,25 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     const reprompt = HELP_REPROMPT
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
    return await jsonObj;
+  }
+  async function selectPre(anno,pp,nivel,mes){
+    let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num<= "+mes+" and nivel= '"+nivel+"' and u_admi='TOTAL';";
+    let respuesta= await con.qryPre(string);
+    let speechOutput;
+    if(respuesta != null){
+        if(mes==1){
+          speechOutput= pre.decima(respuesta,pp,nivel);
+        }else if(mes>1 && mes<12){
+          speechOutput= pre.regrecionLineal(respuesta,pp,nivel);
+        }else{
+          speechOutput='Creo que esa predicción va por tu cuenta.';
+        }
+    }else{
+      speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
+    }
+    const reprompt = HELP_REPROMPT
+    var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
+    return await jsonObj;
   }
 /**
  * Se enciende el servidor http:8180, https:443

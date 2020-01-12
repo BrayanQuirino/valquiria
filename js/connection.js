@@ -98,6 +98,36 @@ async function qry(string){
     await pool.end();
     return respuesta;
   }
+  async function qryPre(string){
+    let pool = new Pool({
+      user: 'postgres',
+      host: '127.0.0.1',
+      database: 'valquiria',
+      password: 'postgres',
+      port: 5432,
+    })
+    let respuesta=[];
+//console.log(string);
+    await pool.query(string, (err, res) => {
+	if (err) {
+           console.log(err.stack)
+        }else if(res != undefined && res != null && res.rowCount>0){
+            for(i=0;i<res.rowCount;i++){
+              var json={}
+              json.programado=res.rows[i].programado;
+              json.acumulado=res.rows[i].acumulado;
+              json.realizado=res.rows[i].realizado;
+              json.diferencia=res.rows[i].diferencia;
+              respuesta.push(json);
+//console.log(json);
+            }  
+        }else{
+          respuesta=null;
+        }
+        })
+    await pool.end();
+    return respuesta;
+  }
   //Funcion que sirve para pedir el trimestre.
   function s(mes){
     switch(mes){
@@ -160,3 +190,4 @@ async function qry(string){
   exports.qryAll=qryAll;
   exports.sName=sName;
   exports.ordinal=ordinal;
+  exports.qryPre=qryPre;
