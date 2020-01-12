@@ -40,13 +40,15 @@ var confimation2=false;
 const directoryToServe='client'
 const SKILL_NAME = 'valquiria';
 let WELCOME_MESSAGE='Bienvenido al nuevo SISC ';
-const HELP_MESSAGE = 'Puedes decir ayuda, o, salir... ¿Qué quieres hacer?';
 const HELP_REPROMPT = '¿En qué puedo ayudarte?';
 const MORE_MESSAGE = '¿Quieres saber más?';
 const STOP_MESSAGE = 'Disfruta el día...adios!';
 const PAUSE = '<break time="0.3s" />';
 const WHISPER = '<amazon:effect name="whispered">';
 const CLOSE_WHISPER ='</amazon:effect>';
+const HELP_MESSAGE = 'En cualquier programa presupuestal,'+PAUSE+' con su respectivo nivel, puedo decirte como vamos actualmente.' 
++' También puedo decirte el avance por trimestre,'+PAUSE+' incluso puedes saber “quién se llevó las palmas”'
++PAUSE+WHISPER+' osea quien trabajo más. '+CLOSE_WHISPER+PAUSE+'¿Qué quieres hacer?'+PAUSE+' Para salir solo dí'+PAUSE+' "para" '+PAUSE+'o '+PAUSE+'"salir."';
 const httpsOptions ={
 	cert:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/fullchain.pem"),
 	key:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/privkey.pem")
@@ -484,8 +486,13 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     let respuesta= await con.qryAll(string);
     let speechOutput;
     if(respuesta != null){
-      speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta[2]+ ' actividades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
-        + respuesta[0]+ ' actividades '+PAUSE+'asi que tenemos una diferiencia de '+respuesta[3]+'.'+PAUSE; 
+      speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta[2]+ ' unidades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
+        + respuesta[0]+ ' unidades '+PAUSE;
+        if(respuesta[3]>0){
+          speechOutput+='asi que restan por hacer '+respuesta[3]+'.'+PAUSE; 
+        }else{
+          speechOutput+='asi que hemos hecho '+Math.abs(respuesta[3])+' de más.'+PAUSE; 
+        }
     }else{
       speechOutput='Lo siento, no pude encontrar los datos que solicitaste, '+WHISPER+ 'revisa que tu consulta sea correcta.'+ CLOSE_WHISPER;
     }
