@@ -38,7 +38,7 @@ var isFisrtTime = true;
 var confimation1=false;
 var confimation2=false;
 const directoryToServe='client'
-const SKILL_NAME = 'valquiria';
+const SKILL_NAME = 'Valquiria';
 let WELCOME_MESSAGE='Bienvenido al nuevo SISC ';
 const HELP_REPROMPT = '¿En qué puedo ayudarte?';
 const MORE_MESSAGE = '¿Quieres saber más?';
@@ -53,6 +53,7 @@ const httpsOptions ={
 	cert:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/fullchain.pem"),
 	key:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/privkey.pem")
 }
+let names=['name1 será remplazado con éxito.', '¿name1?'+PAUSE+' Ahora solo existe Alexa.','No, Alexa hace mucho más que name1',WHISPER+'Claro, pero no se lo digas a name1'+CLOSE_WHISPER,'Si'+PAUSE+' ¡Y el siguiente serás tú!','Umm... si,'+PAUSE+' Ulises será remplazado'];
 /**
  * Se muestra Hello word en http; puerto extra
  */
@@ -72,10 +73,13 @@ app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 app.post('/valquiria', requestVerifier, async function(req, res) {
 
   if (req.body.request.type === 'LaunchRequest') {
-    res.json(welcome());
-    isFisrtTime = false
-  } else if (req.body.request.type === 'SessionEndedRequest') { /* ... */
-    log("Session End")
+    re=welcome();
+    res.json(re);
+    isFisrtTime = false;
+  } else if (req.body.request.type === 'SessionEndedRequest') { /* ... */ 
+      log("Session End");
+      req.body.session.new=true;
+      //res.json(welcome());
   } else if (req.body.request.type === 'IntentRequest') {
       date=new Date();
       let year=date.getFullYear();
@@ -208,6 +212,21 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         res.json(re);
         confirmation1=confirmation2=false;
         break;
+      case 'names':
+        lastIntent=req.body.request.intent.name;
+        confirmation1=confirmation2=false;
+        var speechOutput;
+        if(req.body.request.intent.slots.nombre.value!=undefined &&req.body.request.intent.slots.nombre.value!=null){
+          var indice=Math.round(Math.random() * (names.length-2));
+          var string=names[indice];
+          speechOutput=string.replace('name1',req.body.request.intent.slots.nombre.value);
+        }else{
+          speechOutput=names[names.length-1];
+        }        
+        re=buildResponse(speechOutput, false, 'NO');
+        res.json(re);
+        confirmation1=confirmation2=false;
+        break;
       default:
         res.json(nose());
 	      confirmation1=confirmation2=false;
@@ -240,7 +259,7 @@ async function yes(year,pp,nivel,mes){
 function resolutionsPp(intent){
   if(intent.slots.pp.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     pp=intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name;
-    let values=JSON.stringify(intent.slots.pp.resolutions.resolutionsPerAuthority);
+    //let values=JSON.stringify(intent.slots.pp.resolutions.resolutionsPerAuthority);
     //console.log(values);
     //console.log('pp:', intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name);
   }else{
@@ -248,10 +267,9 @@ function resolutionsPp(intent){
   }
 }
 function resolutionsNivel(intent){
-let code= intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code;
   if(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     nivel=intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name;
-    let values=JSON.stringify(intent.slots.nivel.resolutions.resolutionsPerAuthority);
+    //let values=JSON.stringify(intent.slots.nivel.resolutions.resolutionsPerAuthority);
     //console.log('nivel: ',intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name);
   }else{
     nivel=intent.slots.nivel.value.toUpperCase();
@@ -259,7 +277,7 @@ let code= intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code;
 }
 function no() {
   const more =MORE_MESSAGE;
-  const tempOutput = 'Ok, lo entiendo.'+PAUSE+'Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
+  const tempOutput = 'Ok, lo entiendo.'+PAUSE+' Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
   +PAUSE+more;
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'NO');
@@ -507,15 +525,15 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     if(respuesta != null){
       switch (respuesta.length){
         case 1:
-          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades.'+PAUSE;
+          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' unidades.'+PAUSE;
           break;
           case 2:
-          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
-          + respuesta[1].acumulado+ ' actividades.'+PAUSE; 
+          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' unidades, seguido de '+ respuesta[1].ua+' con '
+          + respuesta[1].acumulado+ ' unidades.'+PAUSE; 
           break; 
         case 3:
-          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' actividades, seguido de '+ respuesta[1].ua+' con '
-          + respuesta[1].acumulado+ ' actividades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' actividades.'+PAUSE;
+          speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+''+conjugacion+' la '+respuesta[0].ua+ ' con '+respuesta[0].acumulado+' unidades, seguido de '+ respuesta[1].ua+' con '
+          + respuesta[1].acumulado+ ' unidades. '+PAUSE+'Y en tercer lugar está '+respuesta[2].ua+' con '+respuesta[2].acumulado+' unidades.'+PAUSE;
           break;   
         }
     }else{
