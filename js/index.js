@@ -227,6 +227,11 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         res.json(re);
         confirmation1=confirmation2=false;
         break;
+      case 'email':
+        lastIntent=req.body.request.intent.name;
+        con.sendEmail();
+        confirmation1=confirmation2=false;
+        break;
       default:
         res.json(nose());
 	      confirmation1=confirmation2=false;

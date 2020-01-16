@@ -3,6 +3,8 @@
  * @param pool consigue la conexion a la BD
  */
 let {Pool} = require('pg');
+let nodemailer = require('nodemailer');
+require('dotenv').config();
 /**
  * @function qry funcion asincron aque obtiene solamente el porcentaje
  * @param {qry} string la consulta
@@ -11,6 +13,20 @@ let {Pool} = require('pg');
 let tercer={tr:'3.ᵉʳ', t:'3'};
 let primer={pr: '1.ᵉʳ',p:'1'};
 let segundo={sr:'2.º',s:'2'};
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.PASSWORD
+  }
+  });
+
+var mailOptions = {
+  from: 'valquiriasisc@gmail.com',
+  to: 'dracko.bq@gmail.com',
+  subject: 'Informacíon',
+  text: ''
+};
 async function qry(string){
     let pool = new Pool({
       user: 'postgres',
@@ -107,7 +123,7 @@ async function qry(string){
       port: 5432,
     })
     let respuesta=[];
-//console.log(string);
+    console.log(string);
     await pool.query(string, (err, res) => {
 	if (err) {
            console.log(err.stack)
@@ -119,7 +135,7 @@ async function qry(string){
               json.realizado=res.rows[i].realizado;
               json.diferencia=res.rows[i].diferencia;
               respuesta.push(json);
-//console.log(json);
+              console.log(json);
             }  
         }else{
           respuesta=null;
@@ -184,6 +200,16 @@ async function qry(string){
         break;
    } 
   }
+function sendEmail(texto){
+  mailOptions.text=texto;
+  transporter.sendMail(mailOptions, function(error, info){
+    if (error) {
+      console.log(error);
+    } else {
+      console.log('Email sent: ' + info.response);
+    }
+  });
+}
   exports.qry=qry;
   exports.qryPalmas=qryPalmas;
   exports.s=s;
@@ -191,3 +217,4 @@ async function qry(string){
   exports.sName=sName;
   exports.ordinal=ordinal;
   exports.qryPre=qryPre;
+  exports.sendEmail=sendEmail;
