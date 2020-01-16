@@ -33,6 +33,7 @@ let nivel;
 let pp;
 let date;
 let re;
+let speechOutput;
 let conjugacion=true;
 var isFisrtTime = true;
 var confimation1=false;
@@ -229,8 +230,10 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         break;
       case 'email':
         lastIntent=req.body.request.intent.name;
-        con.sendEmail();
+        con.sendEmail(clean());
         confirmation1=confirmation2=false;
+        re=send();
+        res.json(re);
         break;
       default:
         res.json(nose());
@@ -286,7 +289,13 @@ function no() {
   +PAUSE+more;
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'NO');
-
+}
+function send() {
+  const more =MORE_MESSAGE;
+  const tempOutput = 'Ya envié el mensaje.'+PAUSE+' Revisa tu correo';
+  +PAUSE+more;
+  const speechOutput = tempOutput;
+  return buildResponse(speechOutput, false, 'email');
 }
 function nose() {
   const tempOutput = '¡Vaya! Ahora si me metiste en aprietos, en realidad no sé qué contestar pero me '+
@@ -486,7 +495,7 @@ async function select(peticion,anno,pp,nivel,mes,conjugacion){
     let string= "SELECT "+peticion+" FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"';";
     let respuesta= await con.qry(string);
 //console.log(string);
-    let speechOutput;
+    
     if(respuesta != null){
       speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta+' '+ MORE_MESSAGE;
     }else{
@@ -507,7 +516,7 @@ async function select(peticion,anno,pp,nivel,mes,conjugacion){
 async function selectAll(anno,pp,nivel,mes,conjugacion){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"';";
     let respuesta= await con.qryAll(string);
-    let speechOutput;
+    
     if(respuesta != null){
       speechOutput= 'En el '+pp+' en el '+nivel+' '+PAUSE+ ''+conjugacion+' '+respuesta[2]+ ' unidades, acumulando un total de '+ respuesta[1]+'. Lo programado fueron '
         + respuesta[0]+ ' unidades '+PAUSE;
@@ -526,7 +535,7 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
   async function selectPalmas(anno,pp,nivel,mes,conjugacion){
     let string= "SELECT DISTINCT(acumulado),u_admi FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi != 'TOTAL' ORDER BY acumulado DESC;";
     let respuesta= await con.qryPalmas(string);
-    let speechOutput;
+    
     if(respuesta != null){
       switch (respuesta.length){
         case 1:
@@ -551,7 +560,7 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
   async function selectPre(anno,pp,nivel,mes){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num<= "+mes+" and nivel= '"+nivel+"' and u_admi='TOTAL';";
     let respuesta= await con.qryPre(string);
-    let speechOutput;
+    
     if(respuesta != null){
         if(mes==1){
           speechOutput= pre.decima(respuesta,pp,nivel);
@@ -570,6 +579,23 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
 /**
  * Se enciende el servidor http:8180, https:443
  */
+function clean(){
+  let string1=speechOutput;
+  let string2;
+  while(string1.search(PAUSE)!=-1){
+   string2=string1.replace(PAUSE,'');
+   string1=string2;
+  }
+  while(string1.search(WHISPER)!=-1){
+    string2=string1.replace(WHISPER,'');
+    string1=string2;
+   }
+   while(string1.search(CLOSE_WHISPER)!=-1){
+    string2=string1.replace(CLOSE_WHISPER,'');
+    string1=string2;
+   }
+  return string1;
+}
 app.listen(8180);
 https.createServer(httpsOptions,app).listen(port,function(){
 	console.log(`Serving the ${directoryToServe} directory at https:vmonet:${port}`);	

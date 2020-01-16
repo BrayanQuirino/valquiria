@@ -23,7 +23,7 @@ var transporter = nodemailer.createTransport({
 
 var mailOptions = {
   from: 'valquiriasisc@gmail.com',
-  to: 'dracko.bq@gmail.com',
+  to: 'dracko.bq@gmail.com , banser.100@gmail.com',
   subject: 'Informacíon',
   text: ''
 };
@@ -205,8 +205,6 @@ function sendEmail(texto){
   transporter.sendMail(mailOptions, function(error, info){
     if (error) {
       console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
     }
   });
 }
