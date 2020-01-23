@@ -1,18 +1,22 @@
 /**
  * Programa realizado por Brayan Quirino
  * @param pool consigue la conexion a la BD
+ * @param nodemailer variable que nos ayuda a mandar emails
  */
 let {Pool} = require('pg');
 let nodemailer = require('nodemailer');
 require('dotenv').config();
 /**
- * @function qry funcion asincron aque obtiene solamente el porcentaje
- * @param {qry} string la consulta
- * @param {qry} peticion SIGO TRABAJANDO EN GENERALIZAR LAS CONSULTAS
+ * @param tercer objeto que contiene las posibles formas de decir tercero
+ * @param segundo objeto que contiene las posibles formas de decir segundo
+ * @param primer objeto que contiene las posibles formas de decir primer
  */
 let tercer={tr:'3.ᵉʳ', t:'3'};
 let primer={pr: '1.ᵉʳ',p:'1'};
 let segundo={sr:'2.º',s:'2'};
+/**
+ * @param transporter objeto que obtiene las credenciales del correo valquiria
+ */
 var transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -20,13 +24,19 @@ var transporter = nodemailer.createTransport({
     pass: process.env.PASSWORD
   }
   });
-
+/**
+ * @param mailOptions objeto que contiene los detalles del correo
+ */
 var mailOptions = {
   from: 'valquiriasisc@gmail.com',
   to: 'dracko.bq@gmail.com , banser.100@gmail.com',
   subject: 'Informacíon',
   text: ''
 };
+/**
+ * Funcion que realiza un query de acuerdo a string solicitando unicamente el porcentaje
+ * @param {*} string 
+ */
 async function qry(string){
     let pool = new Pool({
       user: 'postgres',
@@ -50,10 +60,10 @@ async function qry(string){
     //console.log(respuesta);
     return respuesta;
   }
+
   /**
-   * @function qryAll funcion que obtiene todos los datos de un tupla de la tabla mir
-   * @param {qryAll} string la consulta
-   * @param {qryAll} peticion PUEDE QUE ELIMINE ESTO
+   * Funcion que realiza un query de acuerdo a string solicitando lo programado, el aucmulado, lo realizado y la diferiencia
+   * @param {*} string 
    */
   async function qryAll(string){
     let pool = new Pool({
@@ -79,6 +89,11 @@ async function qry(string){
     await pool.end();
     return respuesta;
   }
+  /**
+   * Funcion que hace un query de acuerdo a string solicitando por lo menos una unidad y como maximo tres
+   * unidades con mayor porcentaje dle avance
+   * @param {*} string 
+   */
   async function qryPalmas(string){
     let pool = new Pool({
       user: 'postgres',
@@ -114,6 +129,10 @@ async function qry(string){
     await pool.end();
     return respuesta;
   }
+  /**
+   * Funcion que hace un query de a cuerdo a string solicitando los resultados de los meses ateriores
+   * @param {*} string 
+   */
   async function qryPre(string){
     let pool = new Pool({
       user: 'postgres',
@@ -161,6 +180,10 @@ async function qry(string){
         break;
     }
   }
+  /**
+   * Funcion que hace la conversion de los numeros ordinales o strings a arabigos 
+   * @param {*} trimestre 
+   */
   function sName(trimestre){
     let date=new Date();
     let mes;
@@ -184,6 +207,10 @@ async function qry(string){
         break;
     }
   }
+  /**
+   * Funcion que dado un trimestre hace la conversion de arabigo a string
+   * @param {*} trim 
+   */
   function ordinal(trim){
    switch(trim){
      case 3:
@@ -200,6 +227,10 @@ async function qry(string){
         break;
    } 
   }
+/**
+ * Funcion que manda el email con el texto de la variable texto
+ * @param {F} texto 
+ */
 function sendEmail(texto){
   mailOptions.text=texto;
   transporter.sendMail(mailOptions, function(error, info){

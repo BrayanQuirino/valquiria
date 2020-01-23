@@ -49,11 +49,13 @@ const WHISPER = '<amazon:effect name="whispered">';
 const CLOSE_WHISPER ='</amazon:effect>';
 const HELP_MESSAGE = 'En cualquier programa presupuestal,'+PAUSE+' con su respectivo nivel, puedo decirte como vamos actualmente.' 
 +' También puedo decirte el avance por trimestre,'+PAUSE+' incluso puedes saber “quién se llevó las palmas”'
-+PAUSE+WHISPER+' osea quien trabajo más. '+CLOSE_WHISPER+PAUSE+'¿Qué quieres hacer?'+PAUSE+' Para salir solo dí'+PAUSE+' "para" '+PAUSE+'o '+PAUSE+'"salir."';
++PAUSE+WHISPER+' ósea quien trabajo más. '+CLOSE_WHISPER+PAUSE+'Otra cosa que puedo hacer, es predecir el mes siguiente en algún programa presupuestal.'
++PAUSE+' Además, puedo enviarte un correo de alguna consulta que hayas hecho. '+PAUSE+'¿Qué quieres hacer?'+PAUSE+' Para salir solo di'+PAUSE+' "para" '+PAUSE+' o '+PAUSE+'"salir."';
 const httpsOptions ={
 	cert:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/fullchain.pem"),
 	key:fs.readFileSync("/etc/letsencrypt/live/cndiserv.cultura.gob.mx/privkey.pem")
 }
+// names es un array que tiene 5 posibles respuestas al intent name, el cúal es un poco de sarcasmo
 let names=['name1 será remplazado con éxito.', '¿name1?'+PAUSE+' Ahora solo existe Alexa.','No, Alexa hace mucho más que name1',WHISPER+'Claro, pero no se lo digas a name1'+CLOSE_WHISPER,'Si'+PAUSE+' ¡Y el siguiente serás tú!','Umm... si,'+PAUSE+' Ulises será remplazado'];
 /**
  * Se muestra Hello word en http; puerto extra
@@ -69,7 +71,7 @@ app.use(bodyParser.json({
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 /**
- * @function flecha funcion asincrona que hace toda la distribucion y llamadas de otras funciones.
+ * @function esta función atiende todas las solicitudes de alexa, dependiendo del tipo de solicitud atiende con distintas subfunciones
  */
 app.post('/valquiria', requestVerifier, async function(req, res) {
 
@@ -82,11 +84,17 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
       req.body.session.new=true;
       //res.json(welcome());
   } else if (req.body.request.type === 'IntentRequest') {
+    /**
+     * Cada intent tiene su respectiva subfuncion. Cuando un intent es llamado la variable lastIntent es actualizada con el intent llamado
+     * el objetivo de lastIntent es generalizar Amazon.YesIntent ya que la logica de la aplicacion sugiere varios "si" como
+     * respuest del usuario. Concorde a esto, cuando el intent Amazon.YesIntent es llamado realiza una funcion dependiendo 
+     * del intent anterior, dicho de otro modo, Amazon.YesIntent se se ramifica en distintas operaciones.
+     */
       date=new Date();
       let year=date.getFullYear();
     switch (req.body.request.intent.name) {
       case 'AMAZON.YesIntent':
-        re= await yes(year-1,pp,nivel,mes);
+        re= await yes(year,pp,nivel,mes);
         res.json(re);
 	      confirmation1=confirmation2=false;
         break;
@@ -120,27 +128,31 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         //console.log(req.body.request.intent.slots);
         await resolutionsPp(req.body.request.intent);
         await resolutionsNivel(req.body.request.intent);
-        re=await select(peticion,year-1,pp,nivel,mes,'vamos al ');
+        re=await select(peticion,year,pp,nivel,mes,'vamos al ');
 	      confirmation1=confirmation2=false;
         res.json(re);
         break;
+        /**
+         * el intent palmas es el unico que puede ser llamado después de una consulta anterior para usar esos datos
+         * y tambien es llamado desde ceros cuando el usuario otorga los datos pp y nivel
+         */
       case 'palmas':
           //console.log(req.body.request.intent);
           peticion='porcentaje';
           if((req.body.request.intent.slots.pp.value==undefined || req.body.request.intent.slots.pp.value == null) || (req.body.request.intent.slots.nivel.value==undefined || req.body.request.intent.slots.nivel.value == null)){
             if(lastIntent=='principal'){
-                re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
+                re = await selectPalmas(year,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
                 res.json(re);
             }else if(lastIntent=='trimestre'){
               if(conjugacion){
-                re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas este trimestre es...'+PAUSE);
+                re = await selectPalmas(year,pp,nivel,mes,PAUSE+'quien se lleva las palmas este trimestre es...'+PAUSE);
                 res.json(re);
               }else{
-                re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se llevó las palmas fue...'+PAUSE);
+                re = await selectPalmas(year,pp,nivel,mes,PAUSE+'quien se llevó las palmas fue...'+PAUSE);
                 res.json(re);
             }
             }else if(lastIntent=='anual'){
-              re = await selectPalmas(year-1,pp,nivel,mes,PAUSE+'este año quien se lleva las palmas es...'+PAUSE);
+              re = await selectPalmas(year,pp,nivel,mes,PAUSE+'este año quien se lleva las palmas es...'+PAUSE);
               res.json(re);
             }else{
               if(confimation1 || (req.body.request.intent.slots.pp.value!=undefined && req.body.request.intent.slots.pp.value != null)){
@@ -154,7 +166,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
                   }else{
                     await resolutionsNivel(req.body.request.intent);
                     mes=date.getMonth()+1;
-                    re=await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
+                    re=await selectPalmas(year,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
                     res.json(re);  
                   }
               }else if((req.body.request.intent.slots.pp.value== undefined || req.body.request.intent.slots.pp.value== null)){
@@ -167,7 +179,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
             await resolutionsPp(req.body.request.intent);
             await resolutionsNivel(req.body.request.intent);
             mes=date.getMonth()+1;
-            re=await selectPalmas(year-1,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
+            re=await selectPalmas(year,pp,nivel,mes,PAUSE+'quien se lleva las palmas es...'+PAUSE);
             res.json(re);
             confirmation1=confimation2=false;  
           }
@@ -189,7 +201,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         }
 	      await resolutionsPp(req.body.request.intent);
 	      await resolutionsNivel(req.body.request.intent);
-        re=await select(peticion,year-1,pp,nivel,mes,auxconjugacion);
+        re=await select(peticion,year,pp,nivel,mes,auxconjugacion);
         res.json(re);
 	      confirmation1=confirmation2=false;
         break;
@@ -200,7 +212,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         //console.log(req.body.request.intent.slots);
         await resolutionsPp(req.body.request.intent);
         await resolutionsNivel(req.body.request.intent);
-        re=await select(peticion,year-1,pp,nivel,mes,' este año vamos al ');
+        re=await select(peticion,year,pp,nivel,mes,' este año vamos al ');
 	      confirmation1=confirmation2=false;
         res.json(re);
         break;  
@@ -209,7 +221,7 @@ app.post('/valquiria', requestVerifier, async function(req, res) {
         mes=date.getMonth()+1;
         await resolutionsNivel(req.body.request.intent);
         await resolutionsPp(req.body.request.intent);
-        re=await selectPre(year-1,pp,nivel,mes);
+        re=await selectPre(year,pp,nivel,mes);
         res.json(re);
         confirmation1=confirmation2=false;
         break;
@@ -250,20 +262,23 @@ async function yes(year,pp,nivel,mes){
   let string='';
   if(lastIntent=='principal'){
     string='hemos realizado ';
-    palmas=true;
   }else if(lastIntent=='trimestre'){
     if(conjugacion){
       string='este trimestre realizamos '
     }else{
       string='realizamos ';
     }
-    palmas=true;
   }else if(lastIntent='anual'){
     string='este año hemos realizado';
   }
   re=await selectAll(year,pp,nivel,mes,string);
   return re;
 }
+/**
+ * 
+ * @param {*} intent esta funcion recibe el intent llamado y verifica si existe un match entre lo que dijo el usuario y los datos posibles 
+ * del sistema de acuerdo a los programas presupuestales
+ */
 function resolutionsPp(intent){
   if(intent.slots.pp.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     pp=intent.slots.pp.resolutions.resolutionsPerAuthority[0].values[0].value.name;
@@ -274,6 +289,11 @@ function resolutionsPp(intent){
     pp=intent.slots.pp.value.toUpperCase();
   }
 }
+/**
+ * 
+ * @param {*} intent esta funcion recibe el intent llamado y verifica si existe un match entre lo que dijo el usuario y los datos posibles 
+ * del sistema de acuerdo a los niveles
+ */
 function resolutionsNivel(intent){
   if(intent.slots.nivel.resolutions.resolutionsPerAuthority[0].status.code==='ER_SUCCESS_MATCH'){
     nivel=intent.slots.nivel.resolutions.resolutionsPerAuthority[0].values[0].value.name;
@@ -283,6 +303,9 @@ function resolutionsNivel(intent){
     nivel=intent.slots.nivel.value.toUpperCase();
   }
 }
+/**
+ * Funcion correlacionada con el intente Amazon.NoIntent
+ */
 function no() {
   const more =MORE_MESSAGE;
   const tempOutput = 'Ok, lo entiendo.'+PAUSE+' Puedes preguntarme "¿Quién se llevó las palmas?"'+PAUSE;
@@ -290,6 +313,9 @@ function no() {
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'NO');
 }
+/**
+ * Funcion correlacionada con el intent email
+ */
 function send() {
   const more =MORE_MESSAGE;
   const tempOutput = 'Ya envié el mensaje.'+PAUSE+' Revisa tu correo';
@@ -297,6 +323,9 @@ function send() {
   const speechOutput = tempOutput;
   return buildResponse(speechOutput, false, 'email');
 }
+/**
+ * Funcion correlacionada con el default, si no encontro el intent solicitado
+ */
 function nose() {
   const tempOutput = '¡Vaya! Ahora si me metiste en aprietos, en realidad no sé qué contestar pero me '+
   'pondré en contacto con los creadores. '+WHISPER+ 'Puedes preguntarme como nos irá en el siguiente trimestre. '
@@ -305,6 +334,12 @@ function nose() {
   const more = MORE_MESSAGE
   return buildResponseWithRepromt(speechOutput, false, 'WELCOME', more);
 }
+/**
+ * Funcion que verifica que las respuestas y peticiones sean de Alexa
+ * @param {} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
 function requestVerifier(req, res, next) {
     alexaVerifier(
       req.headers.signaturecertchainurl,
@@ -414,7 +449,9 @@ function requestVerifier(req, res, next) {
    }
     return jsonObj
   }
-  
+  /**
+   * Funcion que genera una peticion al usuario para saber el pp de la consulta
+   */
   function palmasSlotpp(){
     var jsonObj={
       "version": "1.0",
@@ -449,6 +486,9 @@ function requestVerifier(req, res, next) {
     }
     return jsonObj;
   }
+   /**
+   * Funcion que genera una peticion al usuario para saber el nivel de la consulta
+   */
   function palmasSlotnivel(value){
     var jsonObj={
       "version": "1.0",
@@ -484,8 +524,8 @@ function requestVerifier(req, res, next) {
     return jsonObj;
   }
 /**
- * 
- * @param {slecet} peticion la peticion del usuario(el dato a seleccionar)
+ * Funcion que genera un query para saber el avance del mes actual
+ * @param {select} peticion la peticion del usuario(el dato a seleccionar)
  * @param {select} anno año del dato a solicitar
  * @param {select} pp programa presupuestal
  * @param {select} nivel nivel (F1,F2,etc)
@@ -507,7 +547,7 @@ async function select(peticion,anno,pp,nivel,mes,conjugacion){
    return await jsonObj;
   }
 /**
- * 
+ * Funcion que genera un query para detallar el avance de un mes o trimestre solicitado
  * @param {selectAll} anno 
  * @param {selectAll} pp 
  * @param {selectAll} nivel 
@@ -532,6 +572,15 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
     return await jsonObj;
   }
+  /**
+   * Funcion que hace un query para hacer el análisis en retrospectiva de las unidades con mayor porcentaje en el mes
+   * o trimestre dado
+   * @param {*} anno 
+   * @param {*} pp 
+   * @param {*} nivel 
+   * @param {*} mes 
+   * @param {*} conjugacion 
+   */
   async function selectPalmas(anno,pp,nivel,mes,conjugacion){
     let string= "SELECT DISTINCT(acumulado),u_admi FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num= "+mes+" and nivel= '"+nivel+"' and u_admi != 'TOTAL' ORDER BY acumulado DESC;";
     let respuesta= await con.qryPalmas(string);
@@ -557,6 +606,13 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     var jsonObj= buildResponseWithRepromt(speechOutput, false, "SELECT", reprompt);
    return await jsonObj;
   }
+  /**
+   * Funcion que genera la estadistica para predecir el mes siguiente de acuerdo al mes dado
+   * @param {} anno 
+   * @param {*} pp 
+   * @param {*} nivel 
+   * @param {*} mes 
+   */
   async function selectPre(anno,pp,nivel,mes){
     let string= "SELECT * FROM mir WHERE anno = '"+anno+"' and programa = '"+pp+"' and mes_num<= "+mes+" and nivel= '"+nivel+"' and u_admi='TOTAL';";
     let respuesta= await con.qryPre(string);
@@ -577,7 +633,7 @@ async function selectAll(anno,pp,nivel,mes,conjugacion){
     return await jsonObj;
   }
 /**
- * Se enciende el servidor http:8180, https:443
+ * Funcion que limpia el seechOutput, quitandole los string PAUSE, WHISPER y CLOSE_WHIPER
  */
 function clean(){
   let string1=speechOutput;
@@ -596,6 +652,9 @@ function clean(){
    }
   return string1;
 }
+/**
+ * Se enciende el servidor http:8180, https:443
+ */
 app.listen(8180);
 https.createServer(httpsOptions,app).listen(port,function(){
 	console.log(`Serving the ${directoryToServe} directory at https:vmonet:${port}`);	
